@@ -111,20 +111,14 @@ public static class Program
 
     private static async Task HandleClientAsync(TcpClient client)
     {
-
         var stopwatch = Stopwatch.StartNew();
         long bytesIn = 0;
         long bytesOut = 0;
         string route = "other";
 
-        using var networkStream = client.GetStream();
-        using var reader = new StreamReader(networkStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize: 4096, leaveOpen: true);
-        using var writer = new StreamWriter(networkStream, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\r\n" };
-
-
         try
         {
-            
+            using (client)
             using var networkStream = client.GetStream();
             using var reader = new StreamReader(networkStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize: 4096, leaveOpen: true);
             using var writer = new StreamWriter(networkStream, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\r\n" };
