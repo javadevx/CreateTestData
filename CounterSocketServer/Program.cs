@@ -30,7 +30,7 @@ public static class Program
 
     private static async Task HandleClientAsync(TcpClient client)
     {
-        using (client)
+        // using (client)
         using var networkStream = client.GetStream();
         using var reader = new StreamReader(networkStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize: 4096, leaveOpen: true);
         using var writer = new StreamWriter(networkStream, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\r\n" };
