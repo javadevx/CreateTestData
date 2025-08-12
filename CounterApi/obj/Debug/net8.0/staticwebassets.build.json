@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "W4DmOLO2s6/8s3cJrVylEjOhkxescLuuWIp2wEIhJ5I=",
+  "Source": "CounterApi",
+  "BasePath": "_content/CounterApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
