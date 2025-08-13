@@ -106,6 +106,7 @@ internal static class Program
         long ticksPerCall = (long)(TimeSpan.TicksPerSecond * intervalSeconds);
         long startTicks = stopwatch.ElapsedTicks;
         long callIndex = 0;
+        long lastReportExecuted = 0;
 
         while (stopwatch.Elapsed.TotalSeconds < durationSeconds)
         {
@@ -135,8 +136,12 @@ internal static class Program
             long elapsedSeconds = (long)stopwatch.Elapsed.TotalSeconds;
             if (elapsedSeconds > lastReportSecond)
             {
+                double secondsSinceLast = Math.Max(1, elapsedSeconds - lastReportSecond);
+                long deltaExecuted = executedCount - lastReportExecuted;
+                double actualRps = deltaExecuted / secondsSinceLast;
                 lastReportSecond = elapsedSeconds;
-                Console.WriteLine($"{threadName} executed={executedCount} path={pathValue} rps={ratePerSecond}");
+                lastReportExecuted = executedCount;
+                Console.WriteLine($"{threadName} executed={executedCount} path={pathValue} rps={actualRps:F1}");
             }
 
             // Pace to achieve the target rate per second
