@@ -97,6 +97,7 @@ internal static class Program
     private static ThreadSummary RunWorkerThread(int threadIndex, int cyclesPerThread)
     {
         var random = ThreadRandom.Value!;
+        string threadName = Thread.CurrentThread.Name ?? $"Worker-{threadIndex + 1}";
 
         // Choose a fixed rate per thread within [5,100]
         int ratePerSecond = random.Next(MinRatePerSecond, MaxRatePerSecond + 1);
@@ -104,8 +105,10 @@ internal static class Program
 
         long successCount = 0;
         long failureCount = 0;
+        long executedCount = 0;
 
         var stopwatch = Stopwatch.StartNew();
+        long lastReportSecond = 0;
         long ticksPerCall = (long)(TimeSpan.TicksPerSecond * intervalSeconds);
         long startTicks = stopwatch.ElapsedTicks;
 
@@ -130,6 +133,16 @@ internal static class Program
             catch
             {
                 failureCount++;
+            }
+
+            executedCount++;
+
+            // Once per second, print thread name and cumulative executions
+            long elapsedSeconds = (long)stopwatch.Elapsed.TotalSeconds;
+            if (elapsedSeconds > lastReportSecond)
+            {
+                lastReportSecond = elapsedSeconds;
+                Console.WriteLine($"{threadName} executed={executedCount}");
             }
 
             // Pace to achieve the target rate per second
