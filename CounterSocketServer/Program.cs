@@ -24,6 +24,12 @@ public static class Program
         public static long RootRequests;
         public static long OtherRequests;
 
+        // Per-second request counter (60-second ring buffer)
+        private const int PerSecondWindowSize = 60;
+        private static readonly long[] PerSecondCounts = new long[PerSecondWindowSize];
+        private static readonly long[] PerSecondSecondKeys = new long[PerSecondWindowSize];
+        private static readonly object PerSecondLock = new();
+
         public static void RecordRequest(long bytesIn, long bytesOut, long latencyTicks, string route)
         {
             Interlocked.Increment(ref TotalRequests);
@@ -55,6 +61,19 @@ public static class Program
                 case "root": Interlocked.Increment(ref RootRequests); break;
                 default: Interlocked.Increment(ref OtherRequests); break;
             }
+
+            // Update per-second ring buffer
+            long epochSecond = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            int index = (int)(epochSecond % PerSecondWindowSize);
+            lock (PerSecondLock)
+            {
+                if (PerSecondSecondKeys[index] != epochSecond)
+                {
+                    PerSecondSecondKeys[index] = epochSecond;
+                    PerSecondCounts[index] = 0;
+                }
+                PerSecondCounts[index]++;
+            }
         }
 
         public static object Snapshot()
@@ -70,6 +89,29 @@ public static class Program
             double minMs = (minTicks == long.MaxValue || total == 0) ? 0 : minTicks / (double)TimeSpan.TicksPerMillisecond;
             double maxMs = total == 0 ? 0 : maxTicks / (double)TimeSpan.TicksPerMillisecond;
 
+            // Compute per-second metrics
+            long nowSecond = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            long currentRps = 0;
+            long sumRecent = 0;
+            int validBuckets = 0;
+            lock (PerSecondLock)
+            {
+                for (int i = 0; i < PerSecondWindowSize; i++)
+                {
+                    long sec = PerSecondSecondKeys[i];
+                    if (sec >= nowSecond - (PerSecondWindowSize - 1))
+                    {
+                        sumRecent += PerSecondCounts[i];
+                        validBuckets++;
+                        if (sec == nowSecond)
+                        {
+                            currentRps = PerSecondCounts[i];
+                        }
+                    }
+                }
+            }
+            double avgRps60s = validBuckets > 0 ? sumRecent / (double)validBuckets : 0;
+
             return new
             {
                 totalRequests = total,
@@ -78,6 +120,7 @@ public static class Program
                 avgLatencyMs = avgMs,
                 minLatencyMs = minMs,
                 maxLatencyMs = maxMs,
+                rps = new { current = currentRps, avg60s = avgRps60s },
                 perRoute = new
                 {
                     count = Volatile.Read(ref CountRequests),
@@ -118,7 +161,7 @@ public static class Program
 
         try
         {
-            using (client)
+            
             using var networkStream = client.GetStream();
             using var reader = new StreamReader(networkStream, Encoding.ASCII, detectEncodingFromByteOrderMarks: false, bufferSize: 4096, leaveOpen: true);
             using var writer = new StreamWriter(networkStream, new UTF8Encoding(false)) { AutoFlush = true, NewLine = "\r\n" };
