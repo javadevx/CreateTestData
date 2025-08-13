@@ -36,11 +36,22 @@ internal static class Program
         return client;
     }
 
+    private static void Log(string message)
+    {
+        var now = DateTime.UtcNow;
+        var rounded = new DateTime(
+            ((now.Ticks + TimeSpan.TicksPerSecond / 2) / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond,
+            DateTimeKind.Utc
+        );
+        string timestamp = rounded.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        Console.WriteLine($"[{timestamp}] {message}");
+    }
+
     public static void Main(string[] args)
     {
         int durationSeconds = DefaultDurationSeconds;
 
-        Console.WriteLine($"Starting {NumThreads} threads. Each runs for {durationSeconds}s.");
+        Log($"Starting {NumThreads} threads. Each runs for {durationSeconds}s.");
 
         var threadSummaries = new ThreadSummary[NumThreads];
         var threads = new Thread[NumThreads];
@@ -79,9 +90,9 @@ internal static class Program
             totalOk += s.SuccessCount;
             totalFail += s.FailureCount;
             totalCycles += s.CyclesCompleted;
-            Console.WriteLine($"Thread {i + 1}: path={s.PathValue} cycles={s.CyclesCompleted:N0} ok={s.SuccessCount:N0} fail={s.FailureCount:N0} rps={s.RatePerSecond}");
+            Log($"Thread {i + 1}: path={s.PathValue} cycles={s.CyclesCompleted:N0} ok={s.SuccessCount:N0} fail={s.FailureCount:N0} rps={s.RatePerSecond}");
         }
-        Console.WriteLine($"Total: cycles={totalCycles:N0} ok={totalOk:N0} fail={totalFail:N0} elapsed={start.Elapsed} (~{(totalOk + totalFail) / Math.Max(1, start.Elapsed.TotalSeconds):F1} req/s overall)");
+        Log($"Total: cycles={totalCycles:N0} ok={totalOk:N0} fail={totalFail:N0} elapsed={start.Elapsed} (~{(totalOk + totalFail) / Math.Max(1, start.Elapsed.TotalSeconds):F1} req/s overall)");
     }
 
     private static ThreadSummary RunWorkerThread(int threadIndex, int durationSeconds)
@@ -139,7 +150,7 @@ internal static class Program
                 double elapsedSecExact = stopwatch.Elapsed.TotalSeconds;
                 double actualRps = elapsedSecExact > 0 ? executedCount / elapsedSecExact : 0.0;
                 lastReportSecond = elapsedSeconds;
-                Console.WriteLine($"{threadName} executed={executedCount} path={pathValue} rps={actualRps:F1}");
+                Log($"{threadName} executed={executedCount} path={pathValue} rps={actualRps:F1}");
             }
 
             // Pace to achieve the target rate per second
