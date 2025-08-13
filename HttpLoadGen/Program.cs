@@ -12,7 +12,7 @@ internal static class Program
     private const int MaxRatePerSecond = 100; // inclusive
     private const int MinPathValue = 1;       // inclusive
     private const int MaxPathValue = 10;      // inclusive
-    private const int DefaultCyclesPerThread = 1_000_000;
+    private const int DefaultDurationSeconds = 10;
 
     private static readonly HttpClient SharedHttpClient = CreateHttpClient();
 
@@ -38,9 +38,9 @@ internal static class Program
 
     public static void Main(string[] args)
     {
-        int cyclesPerThread = GetCyclesFromEnvOrDefault();
+        int durationSeconds = DefaultDurationSeconds;
 
-        Console.WriteLine($"Starting {NumThreads} threads. Each runs {cyclesPerThread:N0} cycles.");
+        Console.WriteLine($"Starting {NumThreads} threads. Each runs for {durationSeconds}s.");
 
         var threadSummaries = new ThreadSummary[NumThreads];
         var threads = new Thread[NumThreads];
@@ -50,7 +50,7 @@ internal static class Program
             int threadIndex = i;
             threads[i] = new Thread(() =>
             {
-                threadSummaries[threadIndex] = RunWorkerThread(threadIndex, cyclesPerThread);
+                threadSummaries[threadIndex] = RunWorkerThread(threadIndex, durationSeconds);
             })
             {
                 IsBackground = false,
@@ -84,17 +84,7 @@ internal static class Program
         Console.WriteLine($"Total: cycles={totalCycles:N0} ok={totalOk:N0} fail={totalFail:N0} elapsed={start.Elapsed} (~{(totalOk + totalFail) / Math.Max(1, start.Elapsed.TotalSeconds):F1} req/s overall)");
     }
 
-    private static int GetCyclesFromEnvOrDefault()
-    {
-        string? env = Environment.GetEnvironmentVariable("CYCLES");
-        if (!string.IsNullOrWhiteSpace(env) && int.TryParse(env, out int parsed) && parsed > 0)
-        {
-            return parsed;
-        }
-        return DefaultCyclesPerThread;
-    }
-
-    private static ThreadSummary RunWorkerThread(int threadIndex, int cyclesPerThread)
+    private static ThreadSummary RunWorkerThread(int threadIndex, int durationSeconds)
     {
         var random = ThreadRandom.Value!;
         string threadName = Thread.CurrentThread.Name ?? $"Worker-{threadIndex + 1}";
@@ -115,8 +105,9 @@ internal static class Program
         long lastReportSecond = 0;
         long ticksPerCall = (long)(TimeSpan.TicksPerSecond * intervalSeconds);
         long startTicks = stopwatch.ElapsedTicks;
+        long callIndex = 0;
 
-        for (int i = 0; i < cyclesPerThread; i++)
+        while (stopwatch.Elapsed.TotalSeconds < durationSeconds)
         {
             // Use the same URL for the entire thread lifetime
             try
@@ -138,6 +129,7 @@ internal static class Program
             }
 
             executedCount++;
+            callIndex++;
 
             // Once per second, print thread name and cumulative executions
             long elapsedSeconds = (long)stopwatch.Elapsed.TotalSeconds;
@@ -148,7 +140,7 @@ internal static class Program
             }
 
             // Pace to achieve the target rate per second
-            long dueTicks = startTicks + (i + 1) * ticksPerCall;
+            long dueTicks = startTicks + callIndex * ticksPerCall;
             long nowTicks = stopwatch.ElapsedTicks;
             long remainingTicks = dueTicks - nowTicks;
             if (remainingTicks > 0)
@@ -172,7 +164,7 @@ internal static class Program
         {
             ThreadIndex = threadIndex,
             RatePerSecond = ratePerSecond,
-            CyclesCompleted = cyclesPerThread,
+            CyclesCompleted = executedCount,
             SuccessCount = successCount,
             FailureCount = failureCount,
             PathValue = pathValue
