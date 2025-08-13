@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HttpLoadGen")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+353d010e78e05afb83e92aa104358dea2d814c28")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+274006631409a4f7579c58d9f7ac78f606ed9521")]
 [assembly: System.Reflection.AssemblyProductAttribute("HttpLoadGen")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HttpLoadGen")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
