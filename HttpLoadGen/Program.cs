@@ -79,7 +79,7 @@ internal static class Program
             totalOk += s.SuccessCount;
             totalFail += s.FailureCount;
             totalCycles += s.CyclesCompleted;
-            Console.WriteLine($"Thread {i + 1}: cycles={s.CyclesCompleted:N0} ok={s.SuccessCount:N0} fail={s.FailureCount:N0} rps={s.RatePerSecond}");
+            Console.WriteLine($"Thread {i + 1}: path={s.PathValue} cycles={s.CyclesCompleted:N0} ok={s.SuccessCount:N0} fail={s.FailureCount:N0} rps={s.RatePerSecond}");
         }
         Console.WriteLine($"Total: cycles={totalCycles:N0} ok={totalOk:N0} fail={totalFail:N0} elapsed={start.Elapsed} (~{(totalOk + totalFail) / Math.Max(1, start.Elapsed.TotalSeconds):F1} req/s overall)");
     }
@@ -103,6 +103,10 @@ internal static class Program
         int ratePerSecond = random.Next(MinRatePerSecond, MaxRatePerSecond + 1);
         double intervalSeconds = 1.0 / ratePerSecond;
 
+        // Choose a fixed path value per thread within [1,10]
+        int pathValue = random.Next(MinPathValue, MaxPathValue + 1);
+        string url = $"{BaseUrl}/count/{pathValue}";
+
         long successCount = 0;
         long failureCount = 0;
         long executedCount = 0;
@@ -114,9 +118,7 @@ internal static class Program
 
         for (int i = 0; i < cyclesPerThread; i++)
         {
-            int pathValue = random.Next(MinPathValue, MaxPathValue + 1);
-            string url = $"{BaseUrl}/count/{pathValue}";
-
+            // Use the same URL for the entire thread lifetime
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -172,7 +174,8 @@ internal static class Program
             RatePerSecond = ratePerSecond,
             CyclesCompleted = cyclesPerThread,
             SuccessCount = successCount,
-            FailureCount = failureCount
+            FailureCount = failureCount,
+            PathValue = pathValue
         };
     }
 
@@ -183,5 +186,6 @@ internal static class Program
         public long CyclesCompleted { get; set; }
         public long SuccessCount { get; set; }
         public long FailureCount { get; set; }
+        public int PathValue { get; set; }
     }
 }
