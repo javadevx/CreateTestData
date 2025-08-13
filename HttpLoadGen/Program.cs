@@ -38,7 +38,12 @@ internal static class Program
 
     private static void Log(string message)
     {
-        string timestamp = DateTime.UtcNow.ToString("o");
+        var now = DateTime.UtcNow;
+        var rounded = new DateTime(
+            ((now.Ticks + TimeSpan.TicksPerSecond / 2) / TimeSpan.TicksPerSecond) * TimeSpan.TicksPerSecond,
+            DateTimeKind.Utc
+        );
+        string timestamp = rounded.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'");
         Console.WriteLine($"[{timestamp}] {message}");
     }
 
