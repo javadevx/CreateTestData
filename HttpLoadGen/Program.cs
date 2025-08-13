@@ -144,7 +144,7 @@ internal static class Program
             if (elapsedSeconds > lastReportSecond)
             {
                 lastReportSecond = elapsedSeconds;
-                Console.WriteLine($"{threadName} executed={executedCount}");
+                Console.WriteLine($"{threadName} executed={executedCount} path={pathValue} rps={ratePerSecond}");
             }
 
             // Pace to achieve the target rate per second
