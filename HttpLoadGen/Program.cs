@@ -106,7 +106,7 @@ internal static class Program
         long ticksPerCall = (long)(TimeSpan.TicksPerSecond * intervalSeconds);
         long startTicks = stopwatch.ElapsedTicks;
         long callIndex = 0;
-        long lastReportExecuted = 0;
+        
 
         while (stopwatch.Elapsed.TotalSeconds < durationSeconds)
         {
@@ -136,11 +136,9 @@ internal static class Program
             long elapsedSeconds = (long)stopwatch.Elapsed.TotalSeconds;
             if (elapsedSeconds > lastReportSecond)
             {
-                double secondsSinceLast = Math.Max(1, elapsedSeconds - lastReportSecond);
-                long deltaExecuted = executedCount - lastReportExecuted;
-                double actualRps = deltaExecuted / secondsSinceLast;
+                double elapsedSecExact = stopwatch.Elapsed.TotalSeconds;
+                double actualRps = elapsedSecExact > 0 ? executedCount / elapsedSecExact : 0.0;
                 lastReportSecond = elapsedSeconds;
-                lastReportExecuted = executedCount;
                 Console.WriteLine($"{threadName} executed={executedCount} path={pathValue} rps={actualRps:F1}");
             }
 
