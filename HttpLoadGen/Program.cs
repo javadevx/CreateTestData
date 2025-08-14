@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Threading;
@@ -124,9 +125,16 @@ internal static class Program
             // Use the same URL for the entire thread lifetime
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Get, url);
-                using var response = SharedHttpClient.Send(request, HttpCompletionOption.ResponseHeadersRead);
-                if (response.IsSuccessStatusCode)
+                var request = WebRequest.CreateHttp(url);
+                request.Method = "GET";
+                request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+                request.KeepAlive = true;
+                request.Timeout = 10_000;
+                request.UserAgent = "HttpLoadGen/1.0";
+
+                using var response = (HttpWebResponse)request.GetResponse();
+                int statusCode = (int)response.StatusCode;
+                if (statusCode >= 200 && statusCode <= 299)
                 {
                     successCount++;
                 }
